@@ -4,11 +4,12 @@ import json
 import numpy as np 
 from glob import glob
 
-
+# Como utilizar CSS no streamlit (duas opções):
+#st.write("<style> body {background-color: powderblue;} h1 {color: red;} p {color: blue;} </style>", unsafe_allow_html=True) 
+#st.write('<link rel="stylesheet" href="http://www.fma.if.usp.br/~hsxavier/test_style.css">', unsafe_allow_html=True)
 
 imagem = '<img id="icone" src="https://www.movimentoacredito.org/wp-content/uploads/2018/08/acredito_fundobranco.png" style="float:middle" width=73%>'
 st.write( imagem, unsafe_allow_html=True)
-
 
 # Título do site
 st.markdown(" # Perfil dos Deputados Federais")
@@ -37,7 +38,7 @@ partidos.sort()
 
 partidos_ = ['TODOS']
 partidos_.extend(partidos)
-partido = st.selectbox('Escolha o partido', partidos_)
+partido = st.selectbox('Selecione o partido:', partidos_)
 
 #################### Seleção por UF ############################################
 
@@ -59,7 +60,7 @@ uf = ['TODOS']	# Adicionando a opçao todos ás opções
 uf.extend(estados) 	# unindo a lista de estados a opção TODOS
 
 #Selectbox de UF
-estado = st.selectbox('Selecione o Estado: ', uf)
+estado = st.selectbox('Selecione o estado: ', uf)
 
 ###################### Seleção por Deputados ##################################
 
@@ -92,7 +93,7 @@ candidatos.sort()
 
 
 # Selectbox para Parlamentar
-deputado = st.selectbox('Selecione o Parlamentar', candidatos)
+deputado = st.selectbox('Selecione o parlamentar:', candidatos)
 
 
 # capturando o index do deputado selecionado
@@ -116,20 +117,17 @@ if len(dados[dept]['array_bancadas']) > 0:
 	bancadas = ', '.join(dados[dept]['array_bancadas'])
 
 #Criando tabela com foto e informações do parlamentar
-tabela_foto = """<table frame='void' rules='cols' width=%(largura)s>
+tabela_foto = """<table frame='void'>
 
 <tr>
-    <td><img src="%(foto)s" height=200px></td>
+    <td><img src="%(foto)s" height=150px></td>
     <td> 
-        <table  frame='void' rules='cols' width=%(largura2)s height=%(altura)s> 
+        <table frame='void'> 
             <tr>
-                <td><b> Nome: </b>%(deputado)s</td>                
+                <td><b>%(deputado)s</b></td>                
             </tr>
             <tr>
-                <td><b> Partido </b>%(partido)s  </td>
-            </tr>
-            <tr>
-                <td><b> UF: </b>%(estado)s</td>
+                <td>%(partido)s-%(estado)s </td>
             </tr>
             <tr>
             	<td><b> Bancadas: </b>%(bancadas)s</td>
@@ -139,76 +137,53 @@ tabela_foto = """<table frame='void' rules='cols' width=%(largura)s>
 	
 </tr>
 
+</table>
+""" %{'foto':src, 'deputado':dados[dept]['ultimoStatus_nome'],
+      'partido':dados[dept]['sigla_partido'], 'estado':dados[dept]['uf'], 'bancadas': bancadas}
 
-</table>""" %{'foto':src, 'largura':'60%', 'largura2':'250px', 'altura':'100%', 'deputado':dados[dept]['ultimoStatus_nome'],
- 'partido':dados[dept]['sigla_partido'], 'estado':dados[dept]['uf'],'largura3':'280px', 'bancadas': bancadas}
-
-st.write( tabela_foto , unsafe_allow_html=True)
+st.write(tabela_foto, unsafe_allow_html=True)
 
 
 
 ################################# Criando tabela Liderança ######################################################
-st.write("    ")
 cargo_lider=[]
 sigla_bloco = []
 
 for lideranca in dados[dept]['liderancas']:
     cargo_lider.append(lideranca['cargo'])
-    sigla_bloco.append(lideranca['sigla_bloco'])    
-
-
-texto1 = ''
-if len(cargo_lider) == 0:
-	texto1 = "<tr><td> - </td><td> - </td></tr>"	
-else:	
-	for i in range(len(cargo_lider)):
-		texto1 = "<tr><td>"+ cargo_lider[i]+"</td><td>"+ sigla_bloco[i]+ "</td></tr>"
-
-tabela2 = """<table frame='void' rules='cols'>
-			<tr>
-			    <th>Cargo</th>
-			    <th>Sigla do Bloco</th>
-			    %(texto1)s				
-			</tr> 
-		</table>""" %{'texto1': texto1}
-	
-
+    sigla_bloco.append(lideranca['sigla_bloco'])    	
 
 ################################# Criando tabela Orgãos######################################################3333
 entidade=[]
 cargo = []
 
-
 for orgao in dados[dept]['orgaos']:
     entidade.append(orgao['sigla_orgao'])
     cargo.append(orgao['titulo'])
-    
 
-texto = ''
-if len(entidade) > 0:
-	for i in range(len(entidade)):
-		texto = texto + "<tr><td>"+ entidade[i]+"</td><td>"+ cargo[i]+ "</td></tr>"
+# Tabelas do streamlit: presidência de comissões e liderança de partidos:
+
+import pandas as pd
+
+st.markdown('### Lideranças')
+if len(cargo_lider) == 0:
+    st.write('Nenhuma liderança.')
 else:
-	texto = "<tr><td> - </td><td> - </td></tr>"
+    df = pd.DataFrame({'Bloco': sigla_bloco, 'Cargo': cargo_lider}, index=range(1, len(cargo_lider) + 1))
+    st.table(df)
+
+st.markdown('### Comissões')
+if len(cargo) == 0:
+    st.write('Nenhum cargo diretor em comissões.')
+else:
+    df = pd.DataFrame({'Comissão': entidade, 'Cargo': cargo}, index=range(1, len(cargo) + 1))
+    st.table(df)
 
 
-tabela_orgao = """<table frame='void' rules='cols'>
-					<tr>
-					<th>Órgão</th>
-					<th>Cargo</th>
-					</tr>
-					%(texto)s
-				</table>""" %{'texto': texto}
-
-st.write(tabela_orgao, unsafe_allow_html=True)
-
-st.write("  ")
-
-st.write( tabela2, unsafe_allow_html=True)
 
 ################################### Criando o dashboard de Alinhamento ##############################################
 st.write('            ')
-st.markdown('## Alinhamentos')
+st.markdown('### Alinhamentos')
 
 
 ################################# RIGONI ###########################################################
@@ -229,16 +204,16 @@ fig1.add_trace(go.Indicator(
             {'range': [0, 100], 'color': 'lightgrey'}
         ]}))
 
-fig1.update_layout(
-	autosize=True,
-	height=200,
-	width=475,
-	margin=go.layout.Margin(
-		l=80,
-		r=200,
-		b=5,
-		t=90,
-		))
+#fig1.update_layout(
+#	autosize=False)
+#	height=200,
+#	width=475,
+#	margin=go.layout.Margin(
+#		l=80,
+#		r=200,
+#		b=5,
+#		t=90,
+#		))
 
 st.plotly_chart(fig1)
 
@@ -258,16 +233,17 @@ fig2.add_trace(go.Indicator(
         'steps': [
             {'range': [0, 100], 'color': 'lightgrey'}
         ]}))
-fig2.update_layout(
-	autosize=True,
-	height=200,
-	width=475,
-	margin=go.layout.Margin(
-		l=80,
-		r=200,
-		b=5,
-		t=90,
-		))
+
+#fig2.update_layout(
+#	autosize=True,
+#	height=200,
+#	width=475,
+#	margin=go.layout.Margin(
+# l=80,
+#		r=200,
+#		b=5,
+#		t=90,
+#		))
 
 st.plotly_chart(fig2)
 
@@ -287,16 +263,17 @@ fig3.add_trace(go.Indicator(
         'steps': [
             {'range': [0, 100], 'color': 'lightgrey'}
         ]}))
-fig3.update_layout(
-	autosize=True,
-	height=200,
-	width=475,
-	margin=go.layout.Margin(
-		l=80,
-		r=200,
-		b=5,
-		t=90,
-		))
+
+#fig3.update_layout(
+#	autosize=True,
+#	height=200,
+#	width=475,
+#	margin=go.layout.Margin(
+#		l=80,
+#		r=200,
+#		b=5,
+#		t=90,
+#		))
 
 st.plotly_chart(fig3)
 
@@ -316,16 +293,17 @@ fig4.add_trace(go.Indicator(
         'steps': [
             {'range': [0, 100], 'color': 'lightgrey'}
         ]}))
-fig4.update_layout(
-	autosize=True,
-	height=200,
-	width=475,
-	margin=go.layout.Margin(
-		l=80,
-		r=200,
-		b=5,
-		t=90,
-		))
+
+#fig4.update_layout(
+#	autosize=True,
+#	height=200,
+#	width=475,
+#	margin=go.layout.Margin(
+#		l=80,
+#		r=200,
+#		b=5,
+#		t=90,
+#		))
 
 st.plotly_chart(fig4)
 
@@ -342,60 +320,29 @@ labels = labels[::-1]
 values = values[::-1] 
 
 
-fig = go.Figure(go.Bar(
-            x= values,
-            y= labels,
-            orientation='h',
-            marker_color='MediumSeaGreen',            
-            hoverinfo= "none",            
-            ))
+# Plot de interesses:
 
-def annotations(fig, labels, values, j):
+st.markdown('### Interesses')
 
-    fig.add_annotation(
-        go.layout.Annotation(
-            x = values[4] / 2,
-            text= labels[j], 
-            y = j ,
-            align='center',    
-            font=dict(       
-            family="arial",   
-            size=20,          
-            color="black"),
-            ))
+import matplotlib.pyplot as pl
 
-# Chamando a função para definir atributos do gráfico
-for j in range(5):
-    annotations(fig, labels, values, j)
+def annotations(ax, labels, values):
+    for label, value in zip(labels, values):
+        ax.text(values[-1] / 2, label, label, 
+                fontsize=font_size, horizontalalignment='center', verticalalignment='center')
 
+font_size=16
+fig = pl.figure()
+ax  = fig.add_subplot(1,1,1)
 
+ax.barh(labels, values, color='MediumSeaGreen')
+annotations(ax, labels, values)
 
-fig.update_annotations(dict(
-            xref="x",
-            yref="y",
-            showarrow=False,
-            ax=0,
-            ay=0,
-            
-        ))
+ax.tick_params(labelsize=font_size, labelleft=False, left=False)
+ax.spines['right'].set_visible(False)
+ax.spines['top'].set_visible(False)
+ax.spines['left'].set_visible(False)
+pl.xlabel('%', fontsize=font_size)
 
-
-fig.update_layout(title_text= 'PRINCIPAIS INTERESSES',
-                  yaxis={ 'showticklabels':False, 'showgrid': False },
-                  xaxis={'showgrid': False, 'showticklabels':True, 'tick0':0, 'dtick':3 },
-                  paper_bgcolor= 'rgba(0,0,0,0)',
-                  plot_bgcolor= 'rgba(0,0,0,0)',
-                  
-                  autosize=True,
-                  margin=go.layout.Margin(
-			        l=0,
-			        r=300,
-			        b=100,
-			        t=100,
-			        pad=4
-			    	)
-                  )
-        
-st.plotly_chart(fig)
-
+st.pyplot(fig)
 
