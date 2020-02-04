@@ -3,10 +3,8 @@ import plotly.graph_objects as go
 import json
 import numpy as np 
 from glob import glob
+import pandas as pd
 
-
-
-st.markdown("hello world!!!")
 
 
 # Como utilizar CSS no streamlit (duas opções):
@@ -158,7 +156,7 @@ for lideranca in dados[dept]['liderancas']:
     cargo_lider.append(lideranca['cargo'])
     sigla_bloco.append(lideranca['sigla_bloco'])    	
 
-################################# Criando tabela Orgãos######################################################3333
+################################# Criando tabela Orgãos######################################################
 entidade=[]
 cargo = []
 
@@ -166,9 +164,15 @@ for orgao in dados[dept]['orgaos']:
     entidade.append(orgao['sigla_orgao'])
     cargo.append(orgao['titulo'])
 
-# Tabelas do streamlit: presidência de comissões e liderança de partidos:
+##############################################################################################################
+comissoes = []
+titulo = []
+for comissao in dados[dept]['comissoes']:
+	comissoes.append(comissao['sigla_orgao'])
+	titulo.append(comissao['titulo'])
+######################Tabelas do streamlit: presidência de comissões e liderança de partidos:#######################
 
-import pandas as pd
+
 
 st.markdown('### Lideranças')
 if len(cargo_lider) == 0:
@@ -177,12 +181,19 @@ else:
     df = pd.DataFrame({'Bloco': sigla_bloco, 'Cargo': cargo_lider}, index=range(1, len(cargo_lider) + 1))
     st.table(df)
 
-st.markdown('### Comissões')
+st.markdown('### Cargos de direção')
 if len(cargo) == 0:
     st.write('Nenhum cargo diretor em comissões.')
 else:
     df = pd.DataFrame({'Comissão': entidade, 'Cargo': cargo}, index=range(1, len(cargo) + 1))
     st.table(df)
+
+st.markdown('### Participação em Comissões')
+if len(comissoes) == 0:
+	st.write("Nenhuma Comissão")
+else:
+	df = pd.DataFrame({'Comissão':comissoes, 'Título': titulo}, index=range(1, len(comissoes) + 1))
+	st.table(df)
 
 
 
