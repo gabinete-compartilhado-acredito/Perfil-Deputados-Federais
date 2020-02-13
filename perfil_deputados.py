@@ -394,17 +394,18 @@ else:
 			
 		#criando uma lista com todas as palavras dos ultimos 200 twites
 		big_string = ''
-		for i in range(1,len(df)):    
+		for i in range(len(df)):    
 			big_string = big_string + df[i]['text']
 
 		
 		#Definindo stopwords
 		stopwords = stopwords.words('portuguese') + list(punctuation)
-		stopwords.extend(['https', 'http', 'sobre', 'vamos', 'co', 'rt', 'todos', 'todo', 'rs', 'vc', 'ser','pra', 'tudo', 'vai', 'vcs'])
+		stopwords.extend(['https', 'http', 'sobre', 'vamos', 'co', 'rt', 'todos', 'todo', 'rs', 'vc', 'ser','pra', 'tudo', 'vai', 'vcs',
+						  'www', 'br', 'coisa', 'hoje', 'dia', 'saiba', 'html', 'htm', 'via'])
 
 
 		# Criando WordCloud
-		wordcloud = WordCloud(stopwords=stopwords, background_color='white').generate(big_string)
+		wordcloud = WordCloud(stopwords=stopwords, background_color='white').generate(big_string.lower())
 		pl.figure(figsize=(20,12))
 		pl.imshow(wordcloud, interpolation='bilinear')
 		pl.axis('off')
