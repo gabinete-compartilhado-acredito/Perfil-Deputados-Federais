@@ -238,18 +238,8 @@ fig1.add_trace(go.Indicator(
 			{'range': [0, 100], 'color': 'lightgrey'}
 		]}))
 
-#fig1.update_layout(
-#	autosize=False)
-#	height=200,
-#	width=475,
-#	margin=go.layout.Margin(
-#		l=80,
-#		r=200,
-#		b=5,
-#		t=90,
-#		))
 
-st.plotly_chart(fig1)
+st.plotly_chart(fig1, use_container_width=True)
 
 			     
 			     ############## ALINH. COM TABATA ###########
@@ -270,7 +260,7 @@ fig2.add_trace(go.Indicator(
 			{'range': [0, 100], 'color': 'lightgrey'}
 		]}))
 
-st.plotly_chart(fig2)
+st.plotly_chart(fig2, use_container_width=True)
 
              ################### ALINH. COM GOVERNO ############
 
@@ -290,7 +280,7 @@ fig3.add_trace(go.Indicator(
 			{'range': [0, 100], 'color': 'lightgrey'}
 		]}))
 
-st.plotly_chart(fig3)
+st.plotly_chart(fig3, use_container_width=True)
 
  	          
  	          ################## ALINH. COM  PARTIDO ##############
@@ -311,7 +301,7 @@ fig4.add_trace(go.Indicator(
 			{'range': [0, 100], 'color': 'lightgrey'}
 		]}))
 
-st.plotly_chart(fig4)
+st.plotly_chart(fig4, use_container_width=True)
 
 
 ############################### GRÁFICO DE INTERESSES #######################################
@@ -329,7 +319,7 @@ values = values[::-1]
 
 ###### Plot de interesses #########
 
-st.markdown('### Interesses')
+st.markdown('### Temas de interesse')
 
 def annotations(ax, labels, values):
 	for label, value in zip(labels, values):
@@ -354,7 +344,7 @@ st.pyplot(fig)
 
 ################################### NUVEM DE PALAVRAS  ###########################################################
 
-st.markdown('### Nuvem de Palavras (Twitter)')
+
 
 def scrap(usuario):      
        
@@ -365,7 +355,7 @@ def scrap(usuario):
     tweets = got.manager.TweetManager.getTweets(tweetCriteria)
     
     # Creating list of chosen tweet data
-    user_tweets = [{'date': tweet.formatted_date, 'username': tweet.username, 'text': tweet.text} for tweet in tweets]
+    user_tweets = [{'date': tweet.formatted_date, 'username': tweet.username, 'text': tweet.text, 'link': tweet.permalink} for tweet in tweets]
     
     return user_tweets
 
@@ -403,6 +393,13 @@ else:
 		stopwords.extend(['https', 'http', 'sobre', 'vamos', 'co', 'rt', 'todos', 'todo', 'rs', 'vc', 'ser','pra', 'tudo', 'vai', 'vcs',
 						  'www', 'br', 'coisa', 'hoje', 'dia', 'saiba', 'html', 'htm', 'via'])
 
+		
+		# Inserindo título e hiperlink acima da nuvem de palavras
+		end = df[0]['link'].split('/status')[0]
+		link_perfil = 'Nuvem de Palavras (<a href= %(end)s target="_blank">Twitter</a>)' %{'end':end }
+
+		st.markdown("### " + link_perfil, unsafe_allow_html=True)
+
 
 		# Criando WordCloud
 		wordcloud = WordCloud(stopwords=stopwords, background_color='white').generate(big_string.lower())
@@ -410,4 +407,12 @@ else:
 		pl.imshow(wordcloud, interpolation='bilinear')
 		pl.axis('off')
 		st.pyplot(pl.show())
+
+		
+
+		st.write('Nuvem de palavras baseada em ', len(df), ' tweet(s)')
+
+
+		
+
 
