@@ -4,3 +4,5 @@ perfil_deputados_2020-01-10.json
 env/*
 css
 prototyping
+.ipynb_checkpoints
+__pycache__

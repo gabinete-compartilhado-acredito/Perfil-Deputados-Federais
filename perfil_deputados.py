@@ -1,9 +1,18 @@
 import streamlit as st 
 import plotly.graph_objects as go 
-import json
-import numpy as np 
+import json 
 from glob import glob
 import pandas as pd
+from os import path
+from wordcloud import WordCloud, ImageColorGenerator
+import nltk
+from nltk.corpus import stopwords
+from string import punctuation
+import matplotlib.pyplot as pl
+import GetOldTweets3 as got
+from datetime import datetime, timedelta
+
+
 
 
 
@@ -18,46 +27,53 @@ st.write( imagem, unsafe_allow_html=True)
 st.markdown(" # Perfil dos Deputados Federais")
 
 # Abrindo o arquivo json
-diretorio = sorted(glob('perfil_deputados*.json'))
-arquivo = diretorio[-1]
 
-with open(arquivo, 'r', encoding='utf8') as f:
-    dados = json.load(f)
+def openfile():
+	diretorio = sorted(glob('perfil_deputados*.json'))
+	arquivo = diretorio[-1]	
 
-# Alterando valores de None para 0
-colunas = ['alinhamento_rigoni', 'alinhamento_tabata', 'alinhamento_gov', 'alinhamento_partido']
-for i in range(len(dados)):
-    for coluna in colunas:
-        if dados[i][coluna] == None:
-            dados[i][coluna] = 0 
+	with open(arquivo, 'r', encoding='utf8') as f:
+		dados = json.load(f)
+
+	# Alterando valores de None para 0
+	colunas = ['alinhamento_rigoni', 'alinhamento_tabata', 'alinhamento_gov', 'alinhamento_partido']
+	for i in range(len(dados)):
+		for coluna in colunas:
+			if dados[i][coluna] == None:
+				dados[i][coluna] = 0 
+	return dados
 
 
-####################### Caixa de seleção por partido ###############################
+#chamada a função para obter os dados
+dados = openfile()
+
+
+####################### SELEÇÃO DE PARTIDO ###############################
 partidos = []
 for i in range(len(dados)):
-    if dados[i]['sigla_partido'] not in partidos:
-        partidos.append(dados[i]['sigla_partido'])
+	if dados[i]['sigla_partido'] not in partidos:
+		partidos.append(dados[i]['sigla_partido'])
 partidos.sort()
 
 partidos_ = ['TODOS']
 partidos_.extend(partidos)
 partido = st.selectbox('Selecione o partido:', partidos_)
 
-#################### Seleção por UF ############################################
+#################### SELEÇÃO DE UF ############################################
 
 ### Seleção por UF
 estados = []
 
 if partido == 'TODOS':
-    for i in range(len(dados)):
-        if dados[i]['uf'] not in estados:
-            estados.append(dados[i]['uf'])
+	for i in range(len(dados)):
+		if dados[i]['uf'] not in estados:
+			estados.append(dados[i]['uf'])
 else:
-    for i in range(len(dados)):
-        if dados[i]['sigla_partido'] == partido:
-            if dados[i]['uf'] not in estados:
-                estados.append(dados[i]['uf'])
-    
+	for i in range(len(dados)):
+		if dados[i]['sigla_partido'] == partido:
+			if dados[i]['uf'] not in estados:
+				estados.append(dados[i]['uf'])
+	
 estados.sort()	# Ordenando a lista de estados 
 uf = ['TODOS']	# Adicionando a opçao todos ás opções
 uf.extend(estados) 	# unindo a lista de estados a opção TODOS
@@ -65,33 +81,33 @@ uf.extend(estados) 	# unindo a lista de estados a opção TODOS
 #Selectbox de UF
 estado = st.selectbox('Selecione o estado: ', uf)
 
-###################### Seleção por Deputados ##################################
+###################### SELEÇÃO DE DEPUTADO ##################################
 
 # Criando lista com deputados após seleção de partido e estado
 candidatos = []
 
 # Condições para filtrar deputados baseado em partido e estado
 if partido == 'TODOS' and estado == 'TODOS' :
-    for i in range(len(dados)):
-        candidatos.append(dados[i]['ultimoStatus_nome'])
+	for i in range(len(dados)):
+		candidatos.append(dados[i]['ultimoStatus_nome'])
 
 
 elif partido == 'TODOS' and estado !=  'TODOS':
-    for i in range(len(dados)):
-        if dados[i]['uf'] == estado:
-            candidatos.append(dados[i]['ultimoStatus_nome'])
-    
+	for i in range(len(dados)):
+		if dados[i]['uf'] == estado:
+			candidatos.append(dados[i]['ultimoStatus_nome'])
+	
 
 elif partido !=  'TODOS' and estado == 'TODOS':
-    for i in range(len(dados)):
-        if dados[i]['sigla_partido'] == partido:
-            candidatos.append(dados[i]['ultimoStatus_nome'])
-    
+	for i in range(len(dados)):
+		if dados[i]['sigla_partido'] == partido:
+			candidatos.append(dados[i]['ultimoStatus_nome'])
+	
 else:
-    for i in range(len(dados)):
-       if dados[i]['sigla_partido'] == partido and  dados[i]['uf'] == estado:
-            candidatos.append(dados[i]['ultimoStatus_nome'])
-    
+	for i in range(len(dados)):
+		if dados[i]['sigla_partido'] == partido and  dados[i]['uf'] == estado:
+			candidatos.append(dados[i]['ultimoStatus_nome'])
+	
 candidatos.sort()
 
 
@@ -102,12 +118,12 @@ deputado = st.selectbox('Selecione o parlamentar:', candidatos)
 # capturando o index do deputado selecionado
 dept = 0
 for i in range(len(dados)):
-    if dados[i]['ultimoStatus_nome'] == deputado:
-        dept = i
+	if dados[i]['ultimoStatus_nome'] == deputado:
+		dept = i
 
 
 
-#################################Criando Tabela com foto do parlamentar###################################### 
+################################# TABELA COM FOTO DO PARLAMENTAR ###################################### 
 
 # Concatenando o link + id do parlamentar
 src = "https://www.camara.leg.br/internet/deputado/bandep/" + dados[dept]["id_deputado"] +".jpg"
@@ -123,70 +139,71 @@ if len(dados[dept]['array_bancadas']) > 0:
 tabela_foto = """<table frame='void'>
 
 <tr>
-    <td><img src="%(foto)s" height=150px></td>
-    <td> 
-        <table frame='void'> 
-            <tr>
-                <td><b>%(deputado)s</b></td>                
-            </tr>
-            <tr>
-                <td>%(partido)s-%(estado)s </td>
-            </tr>
-            <tr>
-            	<td><b> Bancadas: </b>%(bancadas)s</td>
-            </tr>
-        </table>
-    </td>
+	<td><img src="%(foto)s" height=150px></td>
+	<td> 
+		<table frame='void'> 
+			<tr>
+				<td><b>%(deputado)s</b></td>                
+			</tr>
+			<tr>
+				<td>%(partido)s-%(estado)s </td>
+			</tr>
+			<tr>
+				<td><b> Bancadas: </b>%(bancadas)s</td>
+			</tr>
+		</table>
+	</td>
 	
 </tr>
 
 </table>
 """ %{'foto':src, 'deputado':dados[dept]['ultimoStatus_nome'],
-      'partido':dados[dept]['sigla_partido'], 'estado':dados[dept]['uf'], 'bancadas': bancadas}
+	  'partido':dados[dept]['sigla_partido'], 'estado':dados[dept]['uf'], 'bancadas': bancadas}
 
 st.write(tabela_foto, unsafe_allow_html=True)
 
 
 
-################################# Criando tabela Liderança ######################################################
+################################# DADOS LIDERANÇA ######################################################
 cargo_lider=[]
 sigla_bloco = []
 
 for lideranca in dados[dept]['liderancas']:
-    cargo_lider.append(lideranca['cargo'])
-    sigla_bloco.append(lideranca['sigla_bloco'])    	
+	cargo_lider.append(lideranca['cargo'])
+	sigla_bloco.append(lideranca['sigla_bloco'])    	
 
-################################# Criando tabela Orgãos######################################################
+################################# DADOS DE ÓRGÃOS ######################################################
 entidade=[]
 cargo = []
 
 for orgao in dados[dept]['orgaos']:
-    entidade.append(orgao['sigla_orgao'])
-    cargo.append(orgao['titulo'])
+	entidade.append(orgao['sigla_orgao'])
+	cargo.append(orgao['titulo'])
 
-##############################################################################################################
+#################################### DADOS DE COMISSOES ##############################################
 comissoes = []
 titulo = []
 for comissao in dados[dept]['comissoes']:
 	comissoes.append(comissao['sigla_orgao'])
 	titulo.append(comissao['titulo'])
-######################Tabelas do streamlit: presidência de comissões e liderança de partidos:#######################
+
+###################### TABELA DE PRESIDENCIA DE COMISSOES E LIDERANÇAS#######################
 
 
 
 st.markdown('### Lideranças')
 if len(cargo_lider) == 0:
-    st.write('Nenhuma liderança.')
+	st.write('Nenhuma liderança.')
 else:
-    df = pd.DataFrame({'Bloco': sigla_bloco, 'Cargo': cargo_lider}, index=range(1, len(cargo_lider) + 1))
-    st.table(df)
+	df = pd.DataFrame({'Bloco': sigla_bloco, 'Cargo': cargo_lider}, index=range(1, len(cargo_lider) + 1))
+	st.table(df)
 
 st.markdown('### Cargos de direção')
 if len(cargo) == 0:
-    st.write('Nenhum cargo diretor em comissões.')
+	st.write('Nenhum cargo diretor em comissões.')
 else:
-    df = pd.DataFrame({'Comissão': entidade, 'Cargo': cargo}, index=range(1, len(cargo) + 1))
-    st.table(df)
+	df = pd.DataFrame({'Comissão': entidade, 'Cargo': cargo}, index=range(1, len(cargo) + 1))
+	st.table(df)
 
 st.markdown('### Participação em Comissões')
 if len(comissoes) == 0:
@@ -197,28 +214,28 @@ else:
 
 
 
-################################### Criando o dashboard de Alinhamento ##############################################
+################################### DASHBOARD DE ALINHAMENTOS ##############################################
 st.write('            ')
 st.markdown('### Alinhamentos')
 
 
-################################# RIGONI ###########################################################
+                     ################ ALINH. COM RIGONI ##############
 fig1 = go.Figure()
 
 fig1.add_trace(go.Indicator(
-    mode = "gauge+number",
-    number ={'suffix':'%'},
-    value = float(dados[dept]['alinhamento_rigoni']) * 100 ,
-    title = {'text': "Rigoni", 'font': {'size': 18}},
-    gauge = {
-        'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "black", 'nticks':6},
-        'bar': {'color': "royalblue"},
-        'bgcolor': "white",
-        'borderwidth': 2,
-        'bordercolor': "lightgrey",
-        'steps': [
-            {'range': [0, 100], 'color': 'lightgrey'}
-        ]}))
+	mode = "gauge+number",
+	number ={'suffix':'%'},
+	value = float(dados[dept]['alinhamento_rigoni']) * 100 ,
+	title = {'text': "Rigoni", 'font': {'size': 18}},
+	gauge = {
+		'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "black", 'nticks':6},
+		'bar': {'color': "royalblue"},
+		'bgcolor': "white",
+		'borderwidth': 2,
+		'bordercolor': "lightgrey",
+		'steps': [
+			{'range': [0, 100], 'color': 'lightgrey'}
+		]}))
 
 #fig1.update_layout(
 #	autosize=False)
@@ -233,100 +250,73 @@ fig1.add_trace(go.Indicator(
 
 st.plotly_chart(fig1)
 
-######################################### Tabata ####################################################
+			     
+			     ############## ALINH. COM TABATA ###########
+
 fig2 = go.Figure()
 fig2.add_trace(go.Indicator(
-    mode = "gauge+number",
-    number ={'suffix':'%'},
-    value = float(dados[dept]['alinhamento_tabata']) * 100 ,
-    title = {'text': "Tabata", 'font': {'size': 18}},
-    gauge = {
-        'axis': {'range': [None, 100],'tickwidth': 1, 'tickcolor': "black", 'nticks':6},
-        'bar': {'color': "royalblue"},
-        'bgcolor': "white",
-        'borderwidth': 2,
-        'bordercolor': "lightgrey",
-        'steps': [
-            {'range': [0, 100], 'color': 'lightgrey'}
-        ]}))
-
-#fig2.update_layout(
-#	autosize=True,
-#	height=200,
-#	width=475,
-#	margin=go.layout.Margin(
-# l=80,
-#		r=200,
-#		b=5,
-#		t=90,
-#		))
+	mode = "gauge+number",
+	number ={'suffix':'%'},
+	value = float(dados[dept]['alinhamento_tabata']) * 100 ,
+	title = {'text': "Tabata", 'font': {'size': 18}},
+	gauge = {
+		'axis': {'range': [None, 100],'tickwidth': 1, 'tickcolor': "black", 'nticks':6},
+		'bar': {'color': "royalblue"},
+		'bgcolor': "white",
+		'borderwidth': 2,
+		'bordercolor': "lightgrey",
+		'steps': [
+			{'range': [0, 100], 'color': 'lightgrey'}
+		]}))
 
 st.plotly_chart(fig2)
 
-######################################## Governo ####################################################
+             ################### ALINH. COM GOVERNO ############
+
 fig3 = go.Figure()
 fig3.add_trace(go.Indicator(
-    mode = "gauge+number",
-    number ={'suffix':'%'},
-    value = float(dados[dept]['alinhamento_gov']) * 100 ,
-    title = {'text': "Governo", 'font': {'size': 18}},
-    gauge = {
-        'axis': {'range': [None, 100],'tickwidth': 1, 'tickcolor': "black", 'nticks':6},
-        'bar': {'color': "royalblue"},
-        'bgcolor': "white",
-        'borderwidth': 2,
-        'bordercolor': "lightgrey",
-        'steps': [
-            {'range': [0, 100], 'color': 'lightgrey'}
-        ]}))
-
-#fig3.update_layout(
-#	autosize=True,
-#	height=200,
-#	width=475,
-#	margin=go.layout.Margin(
-#		l=80,
-#		r=200,
-#		b=5,
-#		t=90,
-#		))
+	mode = "gauge+number",
+	number ={'suffix':'%'},
+	value = float(dados[dept]['alinhamento_gov']) * 100 ,
+	title = {'text': "Governo", 'font': {'size': 18}},
+	gauge = {
+		'axis': {'range': [None, 100],'tickwidth': 1, 'tickcolor': "black", 'nticks':6},
+		'bar': {'color': "royalblue"},
+		'bgcolor': "white",
+		'borderwidth': 2,
+		'bordercolor': "lightgrey",
+		'steps': [
+			{'range': [0, 100], 'color': 'lightgrey'}
+		]}))
 
 st.plotly_chart(fig3)
 
-######################################## Partido ######################################################
+ 	          
+ 	          ################## ALINH. COM  PARTIDO ##############
+
 fig4 = go.Figure()
 fig4.add_trace(go.Indicator(
-    mode = "gauge+number",
-    number ={'suffix':'%'},
-    value = float(dados[dept]['alinhamento_partido']) * 100 ,
-    title = {'text': "Partido", 'font': {'size': 18}},
-    gauge = {
-        'axis': {'range': [None, 100],'tickwidth': 1, 'tickcolor': "black", 'nticks':6},
-        'bar': {'color': "royalblue"},
-        'bgcolor': "white",
-        'borderwidth': 2,
-        'bordercolor': "lightgrey",
-        'steps': [
-            {'range': [0, 100], 'color': 'lightgrey'}
-        ]}))
-
-#fig4.update_layout(
-#	autosize=True,
-#	height=200,
-#	width=475,
-#	margin=go.layout.Margin(
-#		l=80,
-#		r=200,
-#		b=5,
-#		t=90,
-#		))
+	mode = "gauge+number",
+	number ={'suffix':'%'},
+	value = float(dados[dept]['alinhamento_partido']) * 100 ,
+	title = {'text': "Partido", 'font': {'size': 18}},
+	gauge = {
+		'axis': {'range': [None, 100],'tickwidth': 1, 'tickcolor': "black", 'nticks':6},
+		'bar': {'color': "royalblue"},
+		'bgcolor': "white",
+		'borderwidth': 2,
+		'bordercolor': "lightgrey",
+		'steps': [
+			{'range': [0, 100], 'color': 'lightgrey'}
+		]}))
 
 st.plotly_chart(fig4)
 
 
-############################### Gráfico de Interesses #######################################
+############################### GRÁFICO DE INTERESSES #######################################
 labels = []
 values = []
+
 for j in range(5):	# 5 primeiros interesses
 	labels.append(dados[dept]['interesse'][j]['tema'])
 	values.append(round(float(dados[dept]['interesse'][j]['frequencia'])* 100,2))
@@ -336,16 +326,14 @@ labels = labels[::-1]
 values = values[::-1] 
 
 
-# Plot de interesses:
+###### Plot de interesses #########
 
 st.markdown('### Interesses')
 
-import matplotlib.pyplot as pl
-
 def annotations(ax, labels, values):
-    for label, value in zip(labels, values):
-        ax.text(values[-1] / 2, label, label, 
-                fontsize=font_size, horizontalalignment='center', verticalalignment='center')
+	for label, value in zip(labels, values):
+		ax.text(values[-1] / 2, label, label, 
+				fontsize=font_size, horizontalalignment='center', verticalalignment='center')
 
 font_size=16
 fig = pl.figure()
@@ -361,4 +349,63 @@ ax.spines['left'].set_visible(False)
 pl.xlabel('%', fontsize=font_size)
 
 st.pyplot(fig)
+
+
+################################### NUVEM DE PALAVRAS  ###########################################################
+
+st.markdown('### Nuvem de Palavras (Twitter)')
+
+def scrap(usuario):      
+       
+    # Creation of query object
+    tweetCriteria = got.manager.TweetCriteria().setUsername(usuario).setSince('2019-02-01')
+    
+    # Creation of list that contains all tweets
+    tweets = got.manager.TweetManager.getTweets(tweetCriteria)
+    
+    # Creating list of chosen tweet data
+    user_tweets = [{'date': tweet.formatted_date, 'username': tweet.username, 'text': tweet.text} for tweet in tweets]
+    
+    return user_tweets
+
+
+
+# Buscando o perfil do twitter dos deputados
+perfil_twitter = pd.read_excel('deputados_redes_sociais.xlsx')
+
+perfil_twitter = perfil_twitter.set_index('Deputado')
+
+
+
+if deputado.lower() not in perfil_twitter.index :
+	st.warning("Perfil do Twitter não encontrado")
+
+else:
+
+	twitter = perfil_twitter.loc[deputado.lower()].perfil[1:]
+	
+	df = scrap(twitter)
+	
+	if len(df) < 1:
+		st.error("Não foi possível recuperar dados do twitter do parlamentar")
+
+	else:
+			
+		#criando uma lista com todas as palavras dos ultimos 200 twites
+		big_string = ''
+		for i in range(1,len(df)):    
+			big_string = big_string + df[i]['text']
+
+		
+		#Definindo stopwords
+		stopwords = stopwords.words('portuguese') + list(punctuation)
+		stopwords.extend(['https', 'http', 'sobre', 'vamos', 'co', 'rt', 'todos', 'todo', 'rs', 'vc', 'ser','pra', 'tudo', 'vai', 'vcs'])
+
+
+		# Criando WordCloud
+		wordcloud = WordCloud(stopwords=stopwords, background_color='white').generate(big_string)
+		pl.figure(figsize=(20,12))
+		pl.imshow(wordcloud, interpolation='bilinear')
+		pl.axis('off')
+		st.pyplot(pl.show())
 
