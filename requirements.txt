@@ -4,3 +4,4 @@ matplotlib==3.1.2
 wordcloud==1.6.0
 nltk==3.4.5
 GetOldTweets3==0.0.11
+xlrd==1.2.0
