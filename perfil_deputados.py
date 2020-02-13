@@ -359,7 +359,7 @@ st.markdown('### Nuvem de Palavras (Twitter)')
 def scrap(usuario):      
        
     # Creation of query object
-    tweetCriteria = got.manager.TweetCriteria().setUsername(usuario).setSince('2019-02-01')
+    tweetCriteria = got.manager.TweetCriteria().setUsername(usuario).setSince('2020-01-01')
     
     # Creation of list that contains all tweets
     tweets = got.manager.TweetManager.getTweets(tweetCriteria)
