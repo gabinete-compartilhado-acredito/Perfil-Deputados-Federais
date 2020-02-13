@@ -371,7 +371,7 @@ def scrap(usuario):
 
 
 # Buscando o perfil do twitter dos deputados
-perfil_twitter = pd.read_csv('deputados_redes_sociais.csv')
+perfil_twitter = pd.read_excel('deputados_redes_sociais.xlsx')
 
 perfil_twitter = perfil_twitter.set_index('Deputado')
 
