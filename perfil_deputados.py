@@ -7,6 +7,7 @@ from os import path
 from wordcloud import WordCloud, ImageColorGenerator
 import nltk
 from nltk.corpus import stopwords
+nltk.download('stopwords')
 from string import punctuation
 import matplotlib.pyplot as pl
 import GetOldTweets3 as got
